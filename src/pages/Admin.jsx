@@ -181,11 +181,13 @@ const Admin = () => {
         subtitle="What every user on the platform is doing — bot status, mode, and performance. Broker credentials stay private and encrypted, admin included."
       />
 
-      <section className="kpi-grid" style={{ marginBottom: '1.5rem' }}>
+      <section className="kpi-grid stagger-in" style={{ marginBottom: '1.5rem' }}>
         <div className="kpi-card">
           <div className="kpi-header">
             <span>TOTAL USERS</span>
-            <Users size={16} className="text-muted" />
+            <span className="icon-badge icon-badge-secondary">
+              <Users size={16} />
+            </span>
           </div>
           <div className="kpi-value">{users.length}</div>
           <div className="kpi-sub">{users.filter((u) => u.broker_connected).length} with a broker connected</div>
@@ -194,7 +196,9 @@ const Admin = () => {
         <div className="kpi-card">
           <div className="kpi-header">
             <span>ACTIVE BOTS</span>
-            <Activity size={16} className={activeBots > 0 ? 'text-success' : 'text-muted'} />
+            <span className={`icon-badge ${activeBots > 0 ? 'icon-badge-success' : 'icon-badge-muted'}`}>
+              <Activity size={16} />
+            </span>
           </div>
           <div className="kpi-value">{activeBots}</div>
           <div className="kpi-sub">Running right now</div>
@@ -203,7 +207,9 @@ const Admin = () => {
         <div className="kpi-card">
           <div className="kpi-header">
             <span>PLATFORM TRADES</span>
-            <Layers size={16} className="text-muted" />
+            <span className="icon-badge icon-badge-primary">
+              <Layers size={16} />
+            </span>
           </div>
           <div className="kpi-value">{totalTrades}</div>
           <div className="kpi-sub">Across all users</div>
@@ -212,7 +218,9 @@ const Admin = () => {
         <div className="kpi-card">
           <div className="kpi-header">
             <span>PLATFORM PNL</span>
-            {totalPnl >= 0 ? <TrendingUp size={16} className="text-success" /> : <TrendingDown size={16} className="text-danger" />}
+            <span className={`icon-badge ${totalPnl >= 0 ? 'icon-badge-success' : 'icon-badge-danger'}`}>
+              {totalPnl >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+            </span>
           </div>
           <div className={`kpi-value ${totalPnl >= 0 ? 'text-success' : 'text-danger'}`}>
             {totalPnl >= 0 ? '+' : ''}{totalPnl.toFixed(2)}
@@ -221,7 +229,7 @@ const Admin = () => {
         </div>
       </section>
 
-      <div className="panel-card">
+      <div className="panel-card fade-up-in" style={{ animationDelay: '0.15s' }}>
         <h2 className="panel-title">
           <Users size={18} className="text-secondary" />
           Users ({users.length})

@@ -34,11 +34,26 @@
 body {
   margin: 0;
   background-color: var(--bg-main);
-  background-image: 
-    radial-gradient(at 10% 20%, rgba(79, 172, 254, 0.04) 0px, transparent 50%),
-    radial-gradient(at 90% 80%, rgba(252, 0, 255, 0.03) 0px, transparent 50%);
+  background-image:
+    radial-gradient(at 10% 20%, rgba(79, 172, 254, 0.05) 0px, transparent 50%),
+    radial-gradient(at 90% 80%, rgba(252, 0, 255, 0.035) 0px, transparent 50%),
+    radial-gradient(at 50% 0%, rgba(0, 242, 254, 0.04) 0px, transparent 60%),
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: auto, auto, auto, 48px 48px, 48px 48px;
   background-attachment: fixed;
   overflow-x: hidden;
+}
+
+/* Fade the pixel-grid out toward the bottom of the viewport so it reads as
+   ambiance near the top instead of tiling visibly the whole page. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background: linear-gradient(to bottom, transparent 0%, var(--bg-main) 900px);
 }
 
 /* Scrollbar Styling */
@@ -230,11 +245,32 @@ body {
 .btn-primary {
   background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
   color: #050609;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.35) 48%, transparent 66%);
+  transform: translateX(-120%);
+  transition: transform 0.6s ease;
+}
+
+.btn-primary:hover::before {
+  transform: translateX(120%);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-neon);
+}
+
+.btn-primary:active,
+.btn-danger:active,
+.btn-secondary:active {
+  transform: translateY(0) scale(0.98);
 }
 
 .btn-danger {
@@ -345,11 +381,72 @@ input:checked + .slider:before {
 .kpi-card:hover {
   transform: translateY(-3px);
   border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: var(--shadow-card), 0 0 0 1px rgba(255, 255, 255, 0.03);
 }
 
 .kpi-card.active {
   border-color: rgba(0, 242, 254, 0.25);
   box-shadow: 0 4px 20px rgba(0, 242, 254, 0.05);
+}
+
+/* Icon Badge — circular, tinted background behind an icon. Used anywhere a
+   bare lucide icon would otherwise float without visual weight (KPI headers,
+   feature cards, table icon slots). Color is set via a `--badge-color` custom
+   property on the element so one class covers every accent color already in
+   the palette, instead of one modifier class per color. */
+.icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--badge-color, var(--color-primary)) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--badge-color, var(--color-primary)) 25%, transparent);
+  color: var(--badge-color, var(--color-primary));
+  flex-shrink: 0;
+}
+
+.icon-badge.icon-badge-lg {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 12px;
+}
+
+.icon-badge-primary { --badge-color: var(--color-primary); }
+.icon-badge-secondary { --badge-color: var(--color-secondary); }
+.icon-badge-success { --badge-color: var(--color-success); }
+.icon-badge-danger { --badge-color: var(--color-danger); }
+.icon-badge-warning { --badge-color: var(--color-warning); }
+.icon-badge-muted { --badge-color: var(--color-text-muted); }
+
+/* Entrance animation — staggered fade-up, applied via nth-child delay on a
+   parent with .stagger-in. Respects reduced-motion. */
+@keyframes fade-up-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-up-in {
+  animation: fade-up-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.stagger-in > * {
+  animation: fade-up-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.stagger-in > *:nth-child(1) { animation-delay: 0.05s; }
+.stagger-in > *:nth-child(2) { animation-delay: 0.12s; }
+.stagger-in > *:nth-child(3) { animation-delay: 0.19s; }
+.stagger-in > *:nth-child(4) { animation-delay: 0.26s; }
+.stagger-in > *:nth-child(5) { animation-delay: 0.33s; }
+.stagger-in > *:nth-child(6) { animation-delay: 0.4s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fade-up-in,
+  .stagger-in > * {
+    animation: none;
+  }
 }
 
 .kpi-header {
@@ -514,6 +611,73 @@ tr:hover td {
 .form-group input:disabled, .form-group select:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* PnL Equity Curve Chart (Dashboard) */
+.pnl-chart-card {
+  position: relative;
+}
+
+.pnl-chart-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+.pnl-chart-line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pnl-chart-baseline {
+  stroke: var(--border-color);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.pnl-chart-hit-area {
+  fill: transparent;
+  cursor: crosshair;
+}
+
+.pnl-chart-crosshair {
+  stroke: var(--color-text-muted);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+  pointer-events: none;
+}
+
+.pnl-chart-dot {
+  pointer-events: none;
+  stroke: var(--bg-card);
+  stroke-width: 2;
+}
+
+.pnl-chart-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: rgba(9, 10, 15, 0.95);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.75rem;
+  box-shadow: var(--shadow-card);
+  white-space: nowrap;
+  transform: translate(-50%, -115%);
+  z-index: 10;
+}
+
+.pnl-chart-tooltip .tooltip-time {
+  color: var(--color-text-muted);
+  margin-bottom: 0.15rem;
+}
+
+.pnl-chart-tooltip .tooltip-value {
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
 }
 
 /* Terminal Logs Section */
@@ -948,6 +1112,13 @@ tr:hover td {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.35s ease, box-shadow 0.35s ease;
+}
+
+.landing-feature-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: var(--shadow-card), 0 12px 32px rgba(0, 0, 0, 0.25);
 }
 
 .landing-feature-card h3 {
@@ -961,6 +1132,102 @@ tr:hover td {
   line-height: 1.55;
 }
 
+.landing-hero-visual {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.landing-hero-visual .panel-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.hero-chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.hero-chart-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.hero-chart-dots {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.hero-chart-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.hero-chart-body {
+  position: relative;
+  padding: 1.25rem 1.1rem 0.5rem;
+}
+
+.hero-chart-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+.hero-chart-line {
+  fill: none;
+  stroke: var(--color-primary);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 0 6px rgba(0, 242, 254, 0.5));
+  stroke-dasharray: 600;
+  stroke-dashoffset: 600;
+  animation: draw-line 2.2s cubic-bezier(0.65, 0, 0.35, 1) 0.3s forwards;
+}
+
+.hero-chart-fill {
+  opacity: 0;
+  animation: fade-up-in 1.2s ease 1.6s forwards;
+}
+
+.hero-chart-dot {
+  opacity: 0;
+  animation: fade-up-in 0.5s ease 2.2s forwards, blink 2s infinite 2.7s;
+}
+
+@keyframes draw-line {
+  to { stroke-dashoffset: 0; }
+}
+
+.hero-chart-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.75rem 1.1rem 1rem;
+  font-size: 0.72rem;
+  color: var(--color-text-dark);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.landing-hero-visual-glow {
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(ellipse at center, rgba(0, 242, 254, 0.08) 0%, transparent 65%);
+  z-index: -1;
+  pointer-events: none;
+}
+
 .landing-final-cta {
   max-width: 1200px;
   margin: 0 auto;
@@ -971,6 +1238,16 @@ tr:hover td {
   gap: 1.5rem;
   padding: 2.25rem 2.5rem;
   flex-wrap: wrap;
+  position: relative;
+  overflow: hidden;
+}
+
+.landing-final-cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 85% 50%, rgba(0, 242, 254, 0.06), transparent 60%);
+  pointer-events: none;
 }
 
 .landing-final-cta h2 {

@@ -2,7 +2,7 @@
 
 A web dashboard for an automated Nifty options trading strategy (SuperTrend-based), built as a multi-tenant platform — every user connects their own broker account, runs their own bot instance, and trades in either **Paper (simulated)** or **Live** mode.
 
-**Live demo:** [https://trendpulse-amber-alpha.vercel.app/](LIVE)
+**Live demo:** [https://trendpulse-amber-alpha.vercel.app/](https://trendpulse-amber-alpha.vercel.app/)
 
 > This repository contains the **frontend only**. The backend (FastAPI, trading engine, broker integration) is kept in a private repository — this is not an incomplete project, the full product is live at the link above.
 

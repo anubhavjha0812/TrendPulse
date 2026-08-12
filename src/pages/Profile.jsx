@@ -39,9 +39,14 @@ const Profile = () => {
   return (
     <div className="page-container" style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
 
-      <div className="panel-card" style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '2rem', padding: '3rem 2rem' }}>
-        <div style={{ width: '100px', height: '100px', borderRadius: '50%', background: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <User size={48} color="white" />
+      <div className="panel-card fade-up-in" style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '2rem', padding: '3rem 2rem' }}>
+        <div style={{
+          width: '100px', height: '100px', borderRadius: '50%',
+          background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))',
+          boxShadow: '0 0 30px rgba(0, 242, 254, 0.25)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+        }}>
+          <User size={48} color="#050609" />
         </div>
         <div>
           <h1 style={{ margin: '0 0 0.5rem 0', fontSize: '2rem' }}>{user.username}</h1>
@@ -56,7 +61,7 @@ const Profile = () => {
       </div>
 
       {isAdmin ? (
-        <div className="panel-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1.5rem', flexWrap: 'wrap' }}>
+        <div className="panel-card fade-up-in" style={{ animationDelay: '0.1s', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1.5rem', flexWrap: 'wrap' }}>
           <div>
             <h2 style={{ margin: '0 0 0.4rem' }}>Platform oversight</h2>
             <p className="text-muted" style={{ margin: 0 }}>Admin accounts don't connect a broker or trade — see what every user is doing from the Admin overview.</p>
@@ -66,7 +71,7 @@ const Profile = () => {
           </Link>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+        <div className="stagger-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
           {brokerConfig && (
             <div className="panel-card">
               <h2 className="panel-title" style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem', marginBottom: '1rem' }}>

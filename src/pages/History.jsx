@@ -55,11 +55,13 @@ const HistoryPage = () => {
         subtitle="Every trade the bot has taken — today's live buffer plus the archived record synced to Neon at market close."
       />
 
-      <section className="kpi-grid" style={{ marginBottom: '1.5rem' }}>
+      <section className="kpi-grid stagger-in" style={{ marginBottom: '1.5rem' }}>
         <div className="kpi-card">
           <div className="kpi-header">
             <span>TOTAL TRADES</span>
-            <Layers size={16} className="text-muted" />
+            <span className="icon-badge icon-badge-secondary">
+              <Layers size={16} />
+            </span>
           </div>
           <div className="kpi-value">{trades.length}</div>
           <div className="kpi-sub">{closedTrades.length} closed, {trades.length - closedTrades.length} open</div>
@@ -68,11 +70,9 @@ const HistoryPage = () => {
         <div className="kpi-card">
           <div className="kpi-header">
             <span>REALISED PNL</span>
-            {totalPnl >= 0 ? (
-              <TrendingUp size={16} className="text-success" />
-            ) : (
-              <TrendingDown size={16} className="text-danger" />
-            )}
+            <span className={`icon-badge ${totalPnl >= 0 ? 'icon-badge-success' : 'icon-badge-danger'}`}>
+              {totalPnl >= 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+            </span>
           </div>
           <div className={`kpi-value ${totalPnl >= 0 ? 'text-success' : 'text-danger'}`}>
             {totalPnl >= 0 ? '+' : ''}{totalPnl.toFixed(2)}
@@ -83,6 +83,9 @@ const HistoryPage = () => {
         <div className="kpi-card">
           <div className="kpi-header">
             <span>WIN RATE</span>
+            <span className="icon-badge icon-badge-primary">
+              <Layers size={16} />
+            </span>
           </div>
           <div className="kpi-value">
             {closedTrades.length ? `${((wins / closedTrades.length) * 100).toFixed(0)}%` : 'N/A'}
@@ -91,7 +94,7 @@ const HistoryPage = () => {
         </div>
       </section>
 
-      <div className="panel-card">
+      <div className="panel-card fade-up-in" style={{ animationDelay: '0.15s' }}>
         <h2 className="panel-title">
           <HistoryIcon size={18} className="text-secondary" />
           All Trades ({filtered.length})

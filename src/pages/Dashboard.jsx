@@ -8,10 +8,12 @@ import {
   Activity,
   BookOpen,
   Terminal as TerminalIcon,
-  Search
+  Search,
+  LineChart
 } from 'lucide-react';
 import { apiFetch, wsUrl } from '../utils/api';
 import Loading from '../components/Loading';
+import PnLChart from '../components/PnLChart';
 
 const Dashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -32,6 +34,7 @@ const Dashboard = () => {
   const [config, setConfig] = useState({ max_trades: 3 });
   const [positions, setPositions] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [trades, setTrades] = useState([]);
   const [marketStatus, setMarketStatus] = useState({
     spot_price: null,
     strike_price: null,
@@ -123,6 +126,9 @@ const Dashboard = () => {
 
       const marketRes = await apiFetch('/market-status');
       if (marketRes.ok) setMarketStatus(await marketRes.json());
+
+      const tradesRes = await apiFetch('/trades');
+      if (tradesRes.ok) setTrades(await tradesRes.json());
     } catch (e) {
       console.error('Error fetching updates from backend API: ', e);
     }
@@ -154,12 +160,14 @@ const Dashboard = () => {
     <div className="page-container" style={{ padding: '0 2rem 2rem 2rem' }}>
 
       {/* KPI METRIC CARDS */}
-      <section className="kpi-grid" style={{ marginBottom: '1.5rem' }}>
+      <section className="kpi-grid stagger-in" style={{ marginBottom: '1.5rem' }}>
         {/* Status Card */}
         <div className={`kpi-card ${status.is_running ? 'active' : ''}`}>
           <div className="kpi-header">
             <span>SYSTEM STATE</span>
-            <Sliders size={16} className={status.is_running ? 'text-success' : 'text-muted'} />
+            <span className={`icon-badge ${status.is_running ? 'icon-badge-success' : 'icon-badge-muted'}`}>
+              <Sliders size={16} />
+            </span>
           </div>
           <div className="kpi-value" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
             <span className={`status-dot ${status.is_running ? 'running' : ''}`}></span>
@@ -174,7 +182,9 @@ const Dashboard = () => {
         <div className="kpi-card">
           <div className="kpi-header">
             <span>TOTAL PNL (TODAY)</span>
-            <DollarSign size={16} className={status.total_pnl >= 0 ? 'text-success' : 'text-danger'} />
+            <span className={`icon-badge ${status.total_pnl >= 0 ? 'icon-badge-success' : 'icon-badge-danger'}`}>
+              <DollarSign size={16} />
+            </span>
           </div>
           <div className={`kpi-value ${status.total_pnl >= 0 ? 'text-success' : 'text-danger'}`}>
             {status.total_pnl >= 0 ? '+' : ''}{status.total_pnl.toFixed(2)}
@@ -197,7 +207,9 @@ const Dashboard = () => {
         <div className="kpi-card">
           <div className="kpi-header">
             <span>TRADES EXECUTED</span>
-            <Layers size={16} />
+            <span className="icon-badge icon-badge-secondary">
+              <Layers size={16} />
+            </span>
           </div>
           <div className="kpi-value">
             {status.trades_taken_today} <span style={{ fontSize: '1rem', color: 'var(--color-text-dark)' }}>/ {config.max_trades}</span>
@@ -211,18 +223,23 @@ const Dashboard = () => {
         <div className="kpi-card">
           <div className="kpi-header">
             <span>NIFTY SPOT STATUS</span>
-            {marketStatus.signal === 'BUY' ? (
-              <TrendingUp size={16} className="text-success" />
-            ) : marketStatus.signal === 'SELL' ? (
-              <TrendingDown size={16} className="text-danger" />
-            ) : (
-              <Activity size={16} className="text-muted" />
-            )}
+            <span className={`icon-badge ${
+              marketStatus.signal === 'BUY' ? 'icon-badge-success' :
+              marketStatus.signal === 'SELL' ? 'icon-badge-danger' : 'icon-badge-muted'
+            }`}>
+              {marketStatus.signal === 'BUY' ? (
+                <TrendingUp size={16} />
+              ) : marketStatus.signal === 'SELL' ? (
+                <TrendingDown size={16} />
+              ) : (
+                <Activity size={16} />
+              )}
+            </span>
           </div>
           <div className="kpi-value" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             {marketStatus.spot_price ? `${marketStatus.spot_price.toFixed(1)}` : 'N/A'}
             <span className={`badge ${
-              marketStatus.signal === 'BUY' ? 'badge-success' : 
+              marketStatus.signal === 'BUY' ? 'badge-success' :
               marketStatus.signal === 'SELL' ? 'badge-danger' : 'badge-warning'
             }`} style={{ fontSize: '0.65rem' }}>
               {marketStatus.signal}
@@ -238,11 +255,31 @@ const Dashboard = () => {
         </div>
       </section>
 
+      {/* EQUITY CURVE */}
+      <div className="panel-card fade-up-in" style={{ marginBottom: '1.5rem', animationDelay: '0.15s' }}>
+        <h2 className="panel-title" style={{ justifyContent: 'space-between' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <LineChart size={18} className="text-primary" />
+            Equity Curve
+          </span>
+          {(() => {
+            const closed = trades.filter((t) => t.pnl !== null && t.pnl !== undefined);
+            const net = closed.reduce((sum, t) => sum + t.pnl, 0);
+            return closed.length >= 2 ? (
+              <span className={`badge ${net >= 0 ? 'badge-success' : 'badge-danger'}`}>
+                {net >= 0 ? '+' : ''}{net.toFixed(2)} net
+              </span>
+            ) : null;
+          })()}
+        </h2>
+        <PnLChart trades={trades} />
+      </div>
+
       {/* DASHBOARD DETAILS GRID */}
       <section className="main-dashboard-grid" style={{ gridTemplateColumns: '1fr', gap: '1.5rem' }}>
         
         {/* Active Positions */}
-        <div className="panel-card">
+        <div className="panel-card fade-up-in" style={{ animationDelay: '0.2s' }}>
           <h2 className="panel-title">
             <Layers size={18} className="text-success" />
             Active Positions ({positions.length})
@@ -298,7 +335,7 @@ const Dashboard = () => {
         </div>
 
         {/* Recent Orders */}
-        <div className="panel-card">
+        <div className="panel-card fade-up-in" style={{ animationDelay: '0.25s' }}>
           <h2 className="panel-title">
             <BookOpen size={18} className="text-secondary" />
             Order Book ({orders.length})
@@ -358,7 +395,7 @@ const Dashboard = () => {
       </section>
 
       {/* ACTIVITY FEED */}
-      <section className="terminal-card" style={{ marginTop: '1.5rem' }}>
+      <section className="terminal-card fade-up-in" style={{ marginTop: '1.5rem', animationDelay: '0.3s' }}>
         <div className="terminal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <TerminalIcon size={18} className="text-primary" />
