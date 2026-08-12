@@ -17,8 +17,11 @@ const Login = () => {
     setError('');
     setIsSubmitting(true);
     try {
-      const loggedInUser = await login(username, password);
-      navigate(loggedInUser.role === 'admin' ? '/admin' : '/dashboard');
+      // Always land on "/" — Landing.jsx itself redirects an authenticated
+      // admin straight to /admin, so this one line correctly handles both
+      // regular users (who see the landing page) and admins.
+      await login(username, password);
+      navigate('/');
     } catch (err) {
       setError(err.message);
     } finally {

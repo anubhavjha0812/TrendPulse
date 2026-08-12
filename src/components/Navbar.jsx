@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { createPortal } from 'react-dom';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { Activity, Play, Square, Menu, X, User, LogOut, ShieldCheck, AlertCircle, Lock } from 'lucide-react';
 import { useToast } from './Toast';
 import { InlineLoader } from './Loading';
@@ -54,7 +55,13 @@ const PasswordConfirmModal = ({ action, isLive, onCancel, onConfirm }) => {
     }
   };
 
-  return (
+  // Portal straight to <body>: this modal is mounted inside <header
+  // className="app-header">, and that header has `backdrop-filter` for its
+  // frosted-glass look — which (like `transform`/`filter`) creates a new
+  // containing block for descendant `position: fixed` elements. Without the
+  // portal, the "fixed" overlay ends up centered within the thin header bar
+  // instead of the actual viewport, so it renders squashed near the top.
+  return createPortal(
     <div className="modal-overlay" onClick={onCancel}>
       <div className="panel-card modal-card" onClick={(e) => e.stopPropagation()}>
         <h3 className="modal-title">
@@ -101,7 +108,8 @@ const PasswordConfirmModal = ({ action, isLive, onCancel, onConfirm }) => {
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
@@ -231,13 +239,15 @@ const Navbar = () => {
   return (
     <header className="app-header">
       <div className="logo-section">
-        <Activity className="logo-icon" size={26} />
-        <div>
-          <h1 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold' }}>AlgoDxA Term</h1>
-          <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', letterSpacing: '0.5px' }}>
-            NIFTY SPOT SUPERTREND
-          </span>
-        </div>
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none', color: 'inherit' }}>
+          <Activity className="logo-icon" size={26} />
+          <div>
+            <h1 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 'bold' }}>AlgoDxA Term</h1>
+            <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', letterSpacing: '0.5px' }}>
+              NIFTY SPOT SUPERTREND
+            </span>
+          </div>
+        </Link>
 
         <button
           className="nav-menu-toggle"
@@ -251,11 +261,9 @@ const Navbar = () => {
 
       <div className={`nav-collapsible ${menuOpen ? 'open' : ''}`}>
         <nav className="main-nav">
-          {/* Admins land straight on /admin and have no use for the marketing
-              page — the link (and the page itself) is hidden from them. */}
-          {!isAdmin && (
-            <NavLink to="/" end className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Home</NavLink>
-          )}
+          {/* No explicit "Home" link — the logo itself links to "/" (see
+              logo-section above). Admins still never see the marketing page:
+              Landing.jsx redirects an authenticated admin straight to /admin. */}
           {isAuthenticated && isAdmin && (
             <NavLink to="/admin" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Admin</NavLink>
           )}

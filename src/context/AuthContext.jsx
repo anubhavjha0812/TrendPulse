@@ -53,15 +53,21 @@ export const AuthProvider = ({ children }) => {
     return data.user;
   };
 
-  const signup = async (username, password) => {
+  const signup = async (username, email, password) => {
     const res = await fetch(`${API_BASE}/auth/signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username, email, password }),
     });
     const data = await res.json();
     if (!res.ok) {
-      throw new Error(data.detail || 'Signup failed.');
+      // A malformed email (rejected by the backend's own EmailStr check) comes
+      // back as FastAPI's structured validation array, not a plain string —
+      // everything else (duplicate username/email) is already a plain string.
+      const message = Array.isArray(data.detail)
+        ? data.detail.map((d) => d.msg).join(' ')
+        : data.detail;
+      throw new Error(message || 'Signup failed.');
     }
     localStorage.setItem('token', data.access_token);
     localStorage.setItem('user', JSON.stringify(data.user));

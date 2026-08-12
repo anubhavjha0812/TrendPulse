@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 
 const Signup = () => {
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -28,7 +29,7 @@ const Signup = () => {
 
     setIsSubmitting(true);
     try {
-      await signup(username, password);
+      await signup(username, email, password);
       navigate('/dashboard');
     } catch (err) {
       setError(err.message);
@@ -63,6 +64,17 @@ const Signup = () => {
               onChange={(e) => setUsername(e.target.value)}
               autoFocus
               minLength={3}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="signup-email">Email</label>
+            <input
+              id="signup-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
             />
           </div>
