@@ -8,8 +8,17 @@ export const WS_BASE = API_BASE.replace(/^http/, 'ws');
 
 export const getToken = () => localStorage.getItem('token');
 
+// Free-tier hosting (Render backend, Neon database) both suspend when idle —
+// the first request after a quiet period can take 30-60s+ to wake everything
+// up. Without a timeout, a truly stuck request just hangs the UI forever with
+// no feedback, indistinguishable from "broken". This gives cold starts room
+// to succeed while still failing cleanly, with a clear message, if something
+// really is stuck.
+const REQUEST_TIMEOUT_MS = 60000;
+
 /**
- * fetch() wrapper that attaches the JWT (if present) and auto-logs-out on 401
+ * fetch() wrapper that attaches the JWT (if present), times out with a clear
+ * error instead of hanging indefinitely, and auto-logs-out on 401
  * (expired/invalid token) by clearing storage and bouncing to /login.
  */
 export const apiFetch = async (path, options = {}) => {
@@ -20,7 +29,20 @@ export const apiFetch = async (path, options = {}) => {
     ...options.headers,
   };
 
-  const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  let res;
+  try {
+    res = await fetch(`${API_BASE}${path}`, { ...options, headers, signal: controller.signal });
+  } catch (e) {
+    if (e.name === 'AbortError') {
+      throw new Error("The server is taking longer than usual to respond (it may be waking up from idle). Please try again in a moment.");
+    }
+    throw e;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (res.status === 401 && token) {
     localStorage.removeItem('token');

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ShieldCheck, ShieldOff, Trash2, Users, Activity, TrendingUp, TrendingDown, Layers, Lock, RefreshCw, AlertCircle } from 'lucide-react';
 import Loading from '../components/Loading';
 import PageHeader from '../components/PageHeader';
@@ -30,11 +30,15 @@ const MODAL_COPY = {
   },
 };
 
+const SLOW_REQUEST_HINT_MS = 4000;
+
 const AdminActionModal = ({ target, onCancel, onConfirm }) => {
   const [password, setPassword] = useState('');
   const [confirmUsername, setConfirmUsername] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSlow, setIsSlow] = useState(false);
+  const slowTimerRef = useRef(null);
   const copy = MODAL_COPY[target.action];
   const isDelete = target.action === 'delete';
   const canSubmit = password && (!isDelete || confirmUsername === target.username);
@@ -43,12 +47,16 @@ const AdminActionModal = ({ target, onCancel, onConfirm }) => {
     e.preventDefault();
     setError('');
     setIsSubmitting(true);
+    setIsSlow(false);
+    slowTimerRef.current = setTimeout(() => setIsSlow(true), SLOW_REQUEST_HINT_MS);
     try {
       await onConfirm(target, password);
     } catch (err) {
       setError(err.message);
       setPassword('');
     } finally {
+      clearTimeout(slowTimerRef.current);
+      setIsSlow(false);
       setIsSubmitting(false);
     }
   };
@@ -67,6 +75,13 @@ const AdminActionModal = ({ target, onCancel, onConfirm }) => {
             <div className="auth-error">
               <AlertCircle size={16} />
               <span>{error}</span>
+            </div>
+          )}
+
+          {isSlow && !error && (
+            <div className="auth-error" style={{ background: 'rgba(245, 158, 11, 0.08)', borderColor: 'rgba(245, 158, 11, 0.25)', color: 'var(--color-warning)' }}>
+              <RefreshCw size={16} className="animate-spin" />
+              <span>Still working — the server may be waking up from idle (free-tier hosting). This can take up to a minute.</span>
             </div>
           )}
 
