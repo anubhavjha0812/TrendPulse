@@ -1,7 +1,8 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { Activity, Shield, Zap, Terminal, History, Users, ArrowRight, TrendingUp } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import Loading from '../components/Loading';
 
 const FEATURES = [
   {
@@ -54,7 +55,26 @@ const HERO_CHART_FILL = `${HERO_CHART_LINE} L560,160 L0,160 Z`;
 const HERO_CHART_LAST = HERO_CHART_POINTS[HERO_CHART_POINTS.length - 1];
 
 const Landing = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isAdmin, isLoading } = useAuth();
+
+  // Only wait on the session check when a stored session might actually
+  // exist — otherwise every anonymous first-time visitor would see a brief
+  // spinner before the marketing page, just to rule out a case that can't
+  // apply to them. A returning admin (token present) waits so a page refresh
+  // on "/" doesn't flash the marketing page before redirecting.
+  if (isLoading && localStorage.getItem('token')) {
+    return (
+      <div className="page-container" style={{ padding: '2rem' }}>
+        <Loading label="Checking session..." />
+      </div>
+    );
+  }
+
+  // Admins don't trade and have no use for the marketing/landing page —
+  // send them straight to platform oversight instead.
+  if (isAuthenticated && isAdmin) {
+    return <Navigate to="/admin" replace />;
+  }
 
   return (
     <div className="landing">

@@ -17,8 +17,8 @@ const Login = () => {
     setError('');
     setIsSubmitting(true);
     try {
-      await login(username, password);
-      navigate('/dashboard');
+      const loggedInUser = await login(username, password);
+      navigate(loggedInUser.role === 'admin' ? '/admin' : '/dashboard');
     } catch (err) {
       setError(err.message);
     } finally {

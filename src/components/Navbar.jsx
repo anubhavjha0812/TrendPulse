@@ -247,7 +247,11 @@ const Navbar = () => {
 
       <div className={`nav-collapsible ${menuOpen ? 'open' : ''}`}>
         <nav className="main-nav">
-          <NavLink to="/" end className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Home</NavLink>
+          {/* Admins land straight on /admin and have no use for the marketing
+              page — the link (and the page itself) is hidden from them. */}
+          {!isAdmin && (
+            <NavLink to="/" end className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Home</NavLink>
+          )}
           {isAuthenticated && isAdmin && (
             <NavLink to="/admin" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Admin</NavLink>
           )}
