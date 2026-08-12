@@ -133,7 +133,11 @@ const Navbar = () => {
     // Admins don't trade — no personal bot status to poll for.
     if (!isAuthenticated || isAdmin) return;
     fetchStatus();
-    const interval = setInterval(fetchStatus, 4000);
+    // The engine's own running/paper-trading state doesn't need to be fresher
+    // than this — and the button here always re-fetches immediately after the
+    // user's own start/stop/toggle action anyway, so this interval only
+    // affects how fast it notices a change made elsewhere (e.g. another tab).
+    const interval = setInterval(fetchStatus, 60000);
     return () => clearInterval(interval);
   }, [isAuthenticated, isAdmin]);
 

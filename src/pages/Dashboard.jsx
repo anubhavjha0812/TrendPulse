@@ -49,10 +49,14 @@ const Dashboard = () => {
   const terminalEndRef = useRef(null);
   const wsRef = useRef(null);
 
-  // Load initial data
+  // Load initial data. The strategy itself only re-evaluates every 5 minutes
+  // (check_interval), so polling this much faster just adds load without any
+  // real new information — 1 minute keeps things feeling live without hammering
+  // the (remote) database and, when the bot is running, the broker API on
+  // every single poll.
   useEffect(() => {
     fetchInitialData();
-    const interval = setInterval(fetchUpdates, 4000);
+    const interval = setInterval(fetchUpdates, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -114,23 +118,25 @@ const Dashboard = () => {
   };
 
   const fetchUpdates = async () => {
-    try {
-      const statusRes = await apiFetch('/status');
-      if (statusRes.ok) setStatus(await statusRes.json());
+    // These 5 endpoints are independent of each other — firing them together
+    // means one refresh cycle takes as long as the slowest single call,
+    // instead of the sum of all 5 (which is what sequential awaits were doing).
+    const [statusRes, positionsRes, ordersRes, marketRes, tradesRes] = await Promise.allSettled([
+      apiFetch('/status'),
+      apiFetch('/positions'),
+      apiFetch('/orders'),
+      apiFetch('/market-status'),
+      apiFetch('/trades'),
+    ]);
 
-      const positionsRes = await apiFetch('/positions');
-      if (positionsRes.ok) setPositions(await positionsRes.json());
+    if (statusRes.status === 'fulfilled' && statusRes.value.ok) setStatus(await statusRes.value.json());
+    if (positionsRes.status === 'fulfilled' && positionsRes.value.ok) setPositions(await positionsRes.value.json());
+    if (ordersRes.status === 'fulfilled' && ordersRes.value.ok) setOrders(await ordersRes.value.json());
+    if (marketRes.status === 'fulfilled' && marketRes.value.ok) setMarketStatus(await marketRes.value.json());
+    if (tradesRes.status === 'fulfilled' && tradesRes.value.ok) setTrades(await tradesRes.value.json());
 
-      const ordersRes = await apiFetch('/orders');
-      if (ordersRes.ok) setOrders(await ordersRes.json());
-
-      const marketRes = await apiFetch('/market-status');
-      if (marketRes.ok) setMarketStatus(await marketRes.json());
-
-      const tradesRes = await apiFetch('/trades');
-      if (tradesRes.ok) setTrades(await tradesRes.json());
-    } catch (e) {
-      console.error('Error fetching updates from backend API: ', e);
+    for (const r of [statusRes, positionsRes, ordersRes, marketRes, tradesRes]) {
+      if (r.status === 'rejected') console.error('Error fetching updates from backend API: ', r.reason);
     }
   };
 
