@@ -869,12 +869,47 @@ tr:hover td {
 /* Loading State */
 .loading-state {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
+  gap: 0.9rem;
   padding: 4rem 1rem;
   color: var(--color-text-muted);
   font-size: 0.95rem;
+}
+
+.loader-bars {
+  width: 45px;
+  aspect-ratio: .75;
+  --c: no-repeat linear-gradient(180deg, var(--color-primary), var(--color-secondary));
+  background:
+    var(--c) 0%   50%,
+    var(--c) 50%  50%,
+    var(--c) 100% 50%;
+  filter: drop-shadow(0 0 6px rgba(0, 242, 254, 0.35));
+  animation: loader-bars-anim 1s infinite linear alternate;
+  flex-shrink: 0;
+}
+
+/* Same animation, sized down to sit inline in buttons/badges/toasts instead
+   of a full-page loading state — width alone is enough, aspect-ratio scales
+   the height with it. Uses currentColor rather than the fixed brand gradient
+   so it stays visible against the button's own background (e.g. dark bars on
+   the bright cyan .btn-primary, light bars on the dark .btn-secondary) —
+   the fixed cyan gradient nearly disappeared on cyan/blue button fills. */
+.loader-bars-inline {
+  width: 18px;
+  display: inline-block;
+  --c: no-repeat linear-gradient(currentColor 0 0);
+  filter: none;
+}
+@keyframes loader-bars-anim {
+  0%   {background-size: 20% 50% ,20% 50% ,20% 50% }
+  20%  {background-size: 20% 20% ,20% 50% ,20% 50% }
+  40%  {background-size: 20% 100%,20% 20% ,20% 50% }
+  60%  {background-size: 20% 50% ,20% 100%,20% 20% }
+  80%  {background-size: 20% 50% ,20% 50% ,20% 100%}
+  100% {background-size: 20% 50% ,20% 50% ,20% 50% }
 }
 
 /* Page Header */

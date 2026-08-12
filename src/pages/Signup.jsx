@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Activity, UserPlus, RefreshCw, AlertCircle } from 'lucide-react';
+import { Activity, UserPlus, AlertCircle } from 'lucide-react';
+import { InlineLoader } from '../components/Loading';
 import { useAuth } from '../context/AuthContext';
 
 const Signup = () => {
@@ -91,7 +92,7 @@ const Signup = () => {
           </div>
 
           <button type="submit" className="btn btn-primary auth-submit" disabled={isSubmitting}>
-            {isSubmitting ? <RefreshCw size={18} className="animate-spin" /> : <><UserPlus size={18} /> Sign Up</>}
+            {isSubmitting ? <InlineLoader size={18} /> : <><UserPlus size={18} /> Sign Up</>}
           </button>
         </form>
 

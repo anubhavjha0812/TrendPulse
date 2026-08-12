@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ShieldCheck, ShieldOff, Trash2, Users, Activity, TrendingUp, TrendingDown, Layers, Lock, RefreshCw, AlertCircle } from 'lucide-react';
-import Loading from '../components/Loading';
+import { ShieldCheck, ShieldOff, Trash2, Users, Activity, TrendingUp, TrendingDown, Layers, Lock, AlertCircle } from 'lucide-react';
+import Loading, { InlineLoader } from '../components/Loading';
 import PageHeader from '../components/PageHeader';
 import { apiFetch } from '../utils/api';
 import { useAuth } from '../context/AuthContext';
@@ -80,7 +80,7 @@ const AdminActionModal = ({ target, onCancel, onConfirm }) => {
 
           {isSlow && !error && (
             <div className="auth-error" style={{ background: 'rgba(245, 158, 11, 0.08)', borderColor: 'rgba(245, 158, 11, 0.25)', color: 'var(--color-warning)' }}>
-              <RefreshCw size={16} className="animate-spin" />
+              <InlineLoader size={16} />
               <span>Still working — the server may be waking up from idle (free-tier hosting). This can take up to a minute.</span>
             </div>
           )}
@@ -117,7 +117,7 @@ const AdminActionModal = ({ target, onCancel, onConfirm }) => {
               Cancel
             </button>
             <button type="submit" className={`btn ${copy.confirmClass}`} disabled={isSubmitting || !canSubmit}>
-              {isSubmitting ? <RefreshCw size={16} className="animate-spin" /> : isDelete ? <Trash2 size={16} /> : <Lock size={16} />}
+              {isSubmitting ? <InlineLoader size={16} /> : isDelete ? <Trash2 size={16} /> : <Lock size={16} />}
               {copy.confirmLabel}
             </button>
           </div>

@@ -1,14 +1,117 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Activity, Play, Square, RefreshCw, Menu, X, User, LogOut, ShieldCheck } from 'lucide-react';
+import { Activity, Play, Square, Menu, X, User, LogOut, ShieldCheck, AlertCircle, Lock } from 'lucide-react';
 import { useToast } from './Toast';
+import { InlineLoader } from './Loading';
 import { useAuth } from '../context/AuthContext';
 import { apiFetch } from '../utils/api';
+
+const SLOW_REQUEST_HINT_MS = 4000;
+
+const MODAL_COPY = {
+  live: {
+    title: 'Switch to live trading',
+    subtitle: <>This turns off the paper sandbox — the bot will place <strong>real orders with real money</strong>. Confirm your account password to continue.</>,
+    confirmLabel: 'Go live',
+    confirmClass: 'btn-danger',
+  },
+  start: {
+    title: 'Start the trading engine',
+    subtitle: (isLive) => isLive
+      ? <>The bot will start placing <strong>real orders with real money</strong>. Confirm your account password to continue.</>
+      : <>The bot will start running in the <strong>paper trading sandbox</strong>. Confirm your account password to continue.</>,
+    confirmLabel: 'Start Engine',
+    confirmClass: 'btn-primary',
+  },
+};
+
+// Step-up auth modal, reused for both "flip to live" and "start the engine" —
+// both actions place orders (paper or real), so both re-confirm it's really you.
+const PasswordConfirmModal = ({ action, isLive, onCancel, onConfirm }) => {
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSlow, setIsSlow] = useState(false);
+  const slowTimerRef = useRef(null);
+  const copy = MODAL_COPY[action];
+  const subtitle = typeof copy.subtitle === 'function' ? copy.subtitle(isLive) : copy.subtitle;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setIsSubmitting(true);
+    setIsSlow(false);
+    slowTimerRef.current = setTimeout(() => setIsSlow(true), SLOW_REQUEST_HINT_MS);
+    try {
+      await onConfirm(password);
+    } catch (err) {
+      setError(err.message);
+      setPassword('');
+    } finally {
+      clearTimeout(slowTimerRef.current);
+      setIsSlow(false);
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onCancel}>
+      <div className="panel-card modal-card" onClick={(e) => e.stopPropagation()}>
+        <h3 className="modal-title">
+          <Lock size={18} className="text-warning" />
+          {copy.title}
+        </h3>
+        <p className="modal-subtitle">{subtitle}</p>
+
+        <form onSubmit={handleSubmit} className="auth-form">
+          {error && (
+            <div className="auth-error">
+              <AlertCircle size={16} />
+              <span>{error}</span>
+            </div>
+          )}
+
+          {isSlow && !error && (
+            <div className="auth-error" style={{ background: 'rgba(245, 158, 11, 0.08)', borderColor: 'rgba(245, 158, 11, 0.25)', color: 'var(--color-warning)' }}>
+              <InlineLoader size={16} />
+              <span>Still working — the server may be waking up from idle (free-tier hosting). This can take up to a minute.</span>
+            </div>
+          )}
+
+          <div className="form-group">
+            <label htmlFor="stepup-password">Account password</label>
+            <input
+              id="stepup-password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoFocus
+              required
+            />
+          </div>
+
+          <div className="modal-actions">
+            <button type="button" className="btn btn-secondary" onClick={onCancel} disabled={isSubmitting}>
+              Cancel
+            </button>
+            <button type="submit" className={`btn ${copy.confirmClass}`} disabled={isSubmitting || !password}>
+              {isSubmitting ? <InlineLoader size={16} /> : <Lock size={16} />}
+              {copy.confirmLabel}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
 
 const Navbar = () => {
   const [status, setStatus] = useState({ is_running: false, paper_trading: true });
   const [isActionLoading, setIsActionLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  // 'live' (paper -> live toggle) or 'start' (starting the engine) — both
+  // route through the same step-up password modal.
+  const [pendingAction, setPendingAction] = useState(null);
   const location = useLocation();
   const navigate = useNavigate();
   const showToast = useToast();
@@ -39,30 +142,38 @@ const Navbar = () => {
     setMenuOpen(false);
   }, [location.pathname]);
 
-  const togglePaperTradingMode = async (checked) => {
-    try {
-      const res = await apiFetch('/config', {
-        method: 'POST',
-        body: JSON.stringify({ paper_trading: checked })
-      });
-      if (res.ok) {
-        await fetchStatus();
-        showToast(`Switched to ${checked ? 'paper (simulated)' : 'live'} trading mode.`, 'success');
-      } else {
-        showToast('Could not toggle execution mode.', 'error');
-      }
-    } catch (e) {
-      showToast('Network error updating trading mode settings.', 'error');
+  const togglePaperTradingMode = async (checked, confirmPassword) => {
+    // confirm_password is a separate key from the broker "password" field
+    // that this same /config endpoint also accepts — never conflate the two.
+    const body = confirmPassword ? { paper_trading: checked, confirm_password: confirmPassword } : { paper_trading: checked };
+    const res = await apiFetch('/config', {
+      method: 'POST',
+      body: JSON.stringify(body)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.detail || 'Could not toggle execution mode.');
     }
+    await fetchStatus();
+    showToast(`Switched to ${checked ? 'paper (simulated)' : 'live'} trading mode.`, 'success');
   };
 
-  const toggleBot = async () => {
+  const handlePaperTradeToggle = (checked) => {
+    // Going live requires re-entering the account password (step-up
+    // confirmation) — going back to paper is always free and immediate.
+    if (!checked) {
+      setPendingAction('live');
+      return;
+    }
+    togglePaperTradingMode(true).catch(() => showToast('Network error updating trading mode settings.', 'error'));
+  };
+
+  const stopBot = async () => {
     setIsActionLoading(true);
     try {
-      const endpoint = status.is_running ? 'stop' : 'start';
-      const res = await apiFetch(`/bot/${endpoint}`, { method: 'POST' });
+      const res = await apiFetch('/bot/stop', { method: 'POST' });
       if (res.ok) {
-        showToast(status.is_running ? 'Trading engine stopped.' : 'Trading engine started.', 'success');
+        showToast('Trading engine stopped.', 'success');
       } else {
         const err = await res.json();
         showToast(`Action failed: ${err.detail || 'Unknown error'}`, 'error');
@@ -73,6 +184,38 @@ const Navbar = () => {
     } finally {
       setIsActionLoading(false);
     }
+  };
+
+  const startBot = async (confirmPassword) => {
+    const res = await apiFetch('/bot/start', {
+      method: 'POST',
+      body: JSON.stringify({ confirm_password: confirmPassword }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.detail || 'Failed to start trading bot.');
+    }
+    showToast('Trading engine started.', 'success');
+    await fetchStatus();
+  };
+
+  const handleEngineButtonClick = () => {
+    // Starting requires the account password (real or paper — placing any
+    // order needs step-up confirmation); stopping never needs it.
+    if (status.is_running) {
+      stopBot();
+    } else {
+      setPendingAction('start');
+    }
+  };
+
+  const handleModalConfirm = async (password) => {
+    if (pendingAction === 'live') {
+      await togglePaperTradingMode(false, password);
+    } else if (pendingAction === 'start') {
+      await startBot(password);
+    }
+    setPendingAction(null);
   };
 
   const handleLogout = () => {
@@ -130,7 +273,7 @@ const Navbar = () => {
                     type="checkbox"
                     checked={status.paper_trading}
                     disabled={status.is_running}
-                    onChange={(e) => togglePaperTradingMode(e.target.checked)}
+                    onChange={(e) => handlePaperTradeToggle(e.target.checked)}
                   />
                   <span className="slider"></span>
                 </label>
@@ -140,12 +283,12 @@ const Navbar = () => {
               </div>
 
               <button
-                onClick={toggleBot}
+                onClick={handleEngineButtonClick}
                 disabled={isActionLoading}
                 className={`btn ${status.is_running ? 'btn-danger' : 'btn-primary'}`}
               >
                 {isActionLoading ? (
-                  <RefreshCw size={16} className="animate-spin" />
+                  <InlineLoader size={16} />
                 ) : status.is_running ? (
                   <>
                     <Square size={16} fill="currentColor" /> Stop Engine
@@ -175,6 +318,15 @@ const Navbar = () => {
           )}
         </div>
       </div>
+
+      {pendingAction && (
+        <PasswordConfirmModal
+          action={pendingAction}
+          isLive={!status.paper_trading}
+          onCancel={() => setPendingAction(null)}
+          onConfirm={handleModalConfirm}
+        />
+      )}
     </header>
   );
 };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Settings, AlertTriangle } from 'lucide-react';
 import { useToast } from '../components/Toast';
-import Loading from '../components/Loading';
+import Loading, { InlineLoader } from '../components/Loading';
 import PageHeader from '../components/PageHeader';
 import { apiFetch } from '../utils/api';
 
@@ -282,7 +282,7 @@ const Config = () => {
             disabled={status.is_running || isConfigSaving}
             style={{ marginTop: '1rem', width: '100%', justifyContent: 'center', padding: '1rem', fontSize: '1.1rem' }}
           >
-            {isConfigSaving ? <RefreshCw size={20} className="animate-spin" /> : 'Save Config Parameters'}
+            {isConfigSaving ? <InlineLoader size={20} /> : 'Save Config Parameters'}
           </button>
         </form>
 

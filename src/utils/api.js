@@ -3,6 +3,7 @@
 // https://algodxa-backend.onrender.com/api). Falls back to localhost for
 // local dev when the var isn't set. WS_BASE is derived from it automatically
 // (http -> ws, https -> wss) so only one URL needs to be configured.
+
 export const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
 export const WS_BASE = API_BASE.replace(/^http/, 'ws');
 
@@ -14,7 +15,7 @@ export const getToken = () => localStorage.getItem('token');
 // no feedback, indistinguishable from "broken". This gives cold starts room
 // to succeed while still failing cleanly, with a clear message, if something
 // really is stuck.
-const REQUEST_TIMEOUT_MS = 60000;
+const REQUEST_TIMEOUT_MS = 60000; // one minute timeout for requests
 
 /**
  * fetch() wrapper that attaches the JWT (if present), times out with a clear
