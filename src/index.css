@@ -560,12 +560,13 @@ tr:hover td {
 .config-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.75rem;
+  gap: 1.5rem;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 640px) {
   .config-grid {
     grid-template-columns: 1fr;
+    gap: 1rem;
   }
 }
 
@@ -573,13 +574,14 @@ tr:hover td {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  min-width: 0;
 }
 
 .form-group.full-width {
   grid-column: span 2;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 640px) {
   .form-group.full-width {
     grid-column: span 1;
   }

@@ -89,14 +89,14 @@ const Config = () => {
 
   if (!configForm) {
     return (
-      <div className="page-container" style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
+      <div className="page-container" style={{ padding: 'clamp(1rem, 5vw, 2rem)', maxWidth: '800px', margin: '0 auto' }}>
         <Loading label="Loading configuration..." />
       </div>
     );
   }
 
   return (
-    <div className="page-container" style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
+    <div className="page-container" style={{ padding: 'clamp(1rem, 5vw, 2rem)', maxWidth: '800px', margin: '0 auto' }}>
       <PageHeader
         icon={Settings}
         title="Connect Your Broker"
@@ -107,7 +107,7 @@ const Config = () => {
       />
       <div className="panel-card">
         <form onSubmit={handleConfigSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          <div className="config-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
+          <div className="config-grid">
             
             <div className="form-group">
               <label htmlFor="config-username">Username</label>
